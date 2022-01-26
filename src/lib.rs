@@ -26,8 +26,8 @@ impl Indices {
 }
 
 pub struct Step<L: Debug, R: Debug> {
-    indices: Indices,
-    result: Option<Either<L, R>>,
+    pub indices: Indices,
+    pub result: Option<Either<L, R>>,
 }
 
 impl<'v, T> Bisector<'v, T> {
