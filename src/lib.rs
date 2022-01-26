@@ -27,7 +27,7 @@ impl Indices {
 
 pub struct Step<L, R> {
     pub indices: Indices,
-    pub result: Option<Either<L, R>>,
+    pub result: Option<ConvergeTo<L, R>>,
 }
 
 impl<'v, T> Bisector<'v, T> {
@@ -45,7 +45,7 @@ impl<'v, T> Bisector<'v, T> {
     // and returns the resulting indices as part of it's output.
     pub fn bisect<F, L: Debug, R: Debug>(&self, f: F, indices: Indices) -> Step<L, R>
     where
-        F: FnOnce(&T) -> Either<L, R>,
+        F: FnOnce(&T) -> ConvergeTo<L, R>,
     {
         let Indices { left, right } = indices;
 
@@ -59,25 +59,25 @@ impl<'v, T> Bisector<'v, T> {
         let middle = indices.middle();
 
         match f(&self.values[middle]) {
-            Either::Left(out) => Step {
+            ConvergeTo::Left(out) => Step {
                 indices: Indices {
                     left,
                     right: middle,
                 },
-                result: Some(Either::Left(out)),
+                result: Some(ConvergeTo::Left(out)),
             },
-            Either::Right(out) => Step {
+            ConvergeTo::Right(out) => Step {
                 indices: Indices {
                     left: middle + 1,
                     right,
                 },
-                result: Some(Either::Right(out)),
+                result: Some(ConvergeTo::Right(out)),
             },
         }
     }
 }
 
-pub enum Either<Left, Right> {
+pub enum ConvergeTo<Left, Right> {
     Left(Left),
     Right(Right),
 }
@@ -102,7 +102,7 @@ mod tests {
         exit_code: i32,
     }
 
-    fn run_external_command(version: &semver::Version) -> Either<u64, FailOutput> {
+    fn run_external_command(version: &semver::Version) -> ConvergeTo<u64, FailOutput> {
         // Requires https://github.com/foresterre/exit-with-code to be installed and available on the PATH
         let command = std::process::Command::new("ewc")
             .arg(&format!("{}", version.minor))
@@ -112,9 +112,9 @@ mod tests {
         let status = command.wait_with_output().unwrap();
 
         if status.status.success() {
-            Either::Left(version.minor)
+            ConvergeTo::Left(version.minor)
         } else {
-            Either::Right(FailOutput {
+            ConvergeTo::Right(FailOutput {
                 message: String::from_utf8(status.stderr).unwrap(),
                 value: version.minor,
                 exit_code: status.status.code().unwrap(),
@@ -122,11 +122,11 @@ mod tests {
         }
     }
 
-    fn run_minor_greater_than_50(version: &semver::Version) -> Either<u64, u64> {
+    fn run_minor_greater_than_50(version: &semver::Version) -> ConvergeTo<u64, u64> {
         if version.minor >= 50 {
-            Either::Right(version.minor)
+            ConvergeTo::Right(version.minor)
         } else {
-            Either::Left(version.minor)
+            ConvergeTo::Left(version.minor)
         }
     }
 
@@ -154,7 +154,7 @@ mod tests {
         {
             i = indices;
 
-            if let Either::Right(f) = t {
+            if let ConvergeTo::Right(f) = t {
                 failures.push(f);
             }
         }
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn bisect_minor_version_is_at_least_50() {
         #[derive(Debug, Eq, PartialEq)]
-        pub enum TestableEither {
+        pub enum TestableConvergeTo {
             Left(u64),
             Right(u64),
         }
@@ -200,15 +200,15 @@ mod tests {
             i = indices;
 
             convergence.push(match t {
-                Either::Left(l) => TestableEither::Left(l),
-                Either::Right(r) => TestableEither::Right(r),
+                ConvergeTo::Left(l) => TestableConvergeTo::Left(l),
+                ConvergeTo::Right(r) => TestableConvergeTo::Right(r),
             });
         }
 
         assert_eq!(convergence.len(), 3);
 
-        assert_eq!(convergence[0], TestableEither::Left(10));
-        assert_eq!(convergence[1], TestableEither::Right(51));
-        assert_eq!(convergence[2], TestableEither::Right(50));
+        assert_eq!(convergence[0], TestableConvergeTo::Left(10));
+        assert_eq!(convergence[1], TestableConvergeTo::Right(51));
+        assert_eq!(convergence[2], TestableConvergeTo::Right(50));
     }
 }
