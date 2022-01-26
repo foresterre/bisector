@@ -7,8 +7,8 @@ pub struct Bisector<'v, T> {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Indices {
-    left: usize,
-    right: usize,
+    pub left: usize,
+    pub right: usize,
 }
 
 impl Indices {
