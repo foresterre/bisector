@@ -25,7 +25,7 @@ impl Indices {
     }
 }
 
-pub struct Step<L: Debug, R: Debug> {
+pub struct Step<L, R> {
     pub indices: Indices,
     pub result: Option<Either<L, R>>,
 }
@@ -77,32 +77,15 @@ impl<'v, T> Bisector<'v, T> {
     }
 }
 
-#[derive(Debug)]
-pub enum Either<Left: Debug, Right: Debug> {
+pub enum Either<Left, Right> {
     Left(Left),
     Right(Right),
 }
 
+// TODO: these need to be fleshed out properly
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[derive(Debug)]
-    struct FailOutput {
-        message: String,
-        value: u32,
-    }
-
-    fn f(k: u32) -> Either<u32, FailOutput> {
-        if k > 7 {
-            Either::Left(k)
-        } else {
-            Either::Right(FailOutput {
-                message: "Failed check".into(),
-                value: k,
-            })
-        }
-    }
 
     #[test]
     fn get_new() {
@@ -112,54 +95,6 @@ mod tests {
         assert_eq!(values.len(), bisect.values().len());
     }
 
-    #[test]
-    fn bisect() {
-        let values = [1u32, 2, 3, 4, 6, 7, 8, 9];
-        let bisect = Bisector::new(&values);
-
-        let mut i = Indices::from_bisector(&bisect);
-        while let Step {
-            indices,
-            result: Some(t),
-        } = bisect.bisect(|v| f(*v), i)
-        {
-            println!("out = {:?}", t);
-            i = indices;
-        }
-    }
-
-    #[test]
-    fn bisect2() {
-        let values = [9u32, 8, 7, 6, 5, 4, 3, 2, 1];
-        let bisector = Bisector::new(&values);
-
-        let mut failures = vec![];
-        let mut middle = None;
-
-        let mut i = Indices::from_bisector(&bisector);
-        while let Step {
-            indices,
-            result: Some(t),
-        } = bisector.bisect(|v| f(*v), i)
-        {
-            println!("{:?}, out = {:?}", i, t);
-            i = indices;
-            middle = Some(indices.middle());
-
-            if let Either::Right(f) = t {
-                failures.push(f);
-            }
-        }
-
-        println!("Failures: {:?}", failures);
-        println!("Last middle: {:?}", middle);
-    }
-}
-
-#[cfg(test)]
-mod tests_with_commands {
-    use super::*;
-
     #[derive(Debug)]
     struct FailOutput {
         message: String,
@@ -168,6 +103,7 @@ mod tests_with_commands {
     }
 
     fn run_external_command(version: &semver::Version) -> Either<u64, FailOutput> {
+        // Requires https://github.com/foresterre/exit-with-code to be installed and available on the PATH
         let command = std::process::Command::new("ewc")
             .arg(&format!("{}", version.minor))
             .stderr(std::process::Stdio::piped())
@@ -203,12 +139,11 @@ mod tests_with_commands {
             semver::Version::new(1, 10, 0),
             semver::Version::new(1, 9, 0),
             semver::Version::new(1, 8, 0),
-            semver::Version::new(0, 0, 0),
+            semver::Version::new(0, 0, 0), // will succeed with ewc 0
         ];
 
         let bisect = Bisector::new(&versions);
 
-        let mut middle = None;
         let mut failures = vec![];
 
         let mut i = Indices::from_bisector(&bisect);
@@ -217,16 +152,63 @@ mod tests_with_commands {
             result: Some(t),
         } = bisect.bisect(|v| run_external_command(v), i)
         {
-            println!("{:?}, out = {:?}", i, t);
             i = indices;
-            middle = Some(indices.middle());
 
             if let Either::Right(f) = t {
                 failures.push(f);
             }
         }
 
-        println!("Failures: {:?}", failures);
-        println!("Last middle: {:?}", middle);
+        assert_eq!(failures.len(), 2);
+
+        assert_eq!(failures[0].exit_code, 10);
+        assert!(failures[0].message.is_empty());
+        assert_eq!(failures[0].value, 10);
+
+        assert_eq!(failures[1].exit_code, 8);
+        assert!(failures[1].message.is_empty());
+        assert_eq!(failures[1].value, 8);
+    }
+
+    #[test]
+    fn bisect_minor_version_is_at_least_50() {
+        #[derive(Debug, Eq, PartialEq)]
+        pub enum TestableEither {
+            Left(u64),
+            Right(u64),
+        }
+
+        let versions = [
+            semver::Version::new(1, 100, 0),
+            semver::Version::new(1, 51, 0),
+            semver::Version::new(1, 50, 0),
+            semver::Version::new(1, 10, 0),
+            semver::Version::new(1, 9, 0),
+            semver::Version::new(1, 8, 0),
+            semver::Version::new(0, 0, 0),
+        ];
+
+        let bisect = Bisector::new(&versions);
+        let mut convergence = vec![];
+
+        let mut i = Indices::from_bisector(&bisect);
+        while let Step {
+            indices,
+            result: Some(t),
+        } = bisect.bisect(|v| run_minor_greater_than_50(v), i)
+        {
+            i = indices;
+
+            convergence.push(match t {
+                Either::Left(l) => TestableEither::Left(l),
+                Either::Right(r) => TestableEither::Right(r),
+            });
+        }
+
+        assert_eq!(convergence.len(), 3);
+
+        assert_eq!(convergence[0], TestableEither::Left(10));
+        assert_eq!(convergence[1], TestableEither::Right(51));
+        assert_eq!(convergence[2], TestableEither::Right(50));
     }
 }
