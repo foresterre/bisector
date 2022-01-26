@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 authors = ["Martijn Gribnau <garm@ilumeo.com>"]
-description = "Flexible bisect implementatation which allows you to use the bisection method on arbitrary data types"
+description = "Flexible bisect implementatation which allows the use the bisection method on arbitrary data types"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/foresterre/bisector"
 
