@@ -105,6 +105,39 @@ impl<'v, T> Bisector<'v, T> {
             },
         }
     }
+
+    pub fn try_bisect<F, E, L, R>(&self, f: F, indices: Indices) -> Result<Step<L, R>, E>
+    where
+        F: FnOnce(&T) -> Result<ConvergeTo<L, R>, E>,
+    {
+        let Indices { left, right } = indices;
+
+        if left == right {
+            return Ok(Step {
+                indices,
+                result: None,
+            });
+        }
+
+        let middle = indices.middle();
+
+        match f(&self.values[middle])? {
+            ConvergeTo::Left(out) => Ok(Step {
+                indices: Indices {
+                    left,
+                    right: middle,
+                },
+                result: Some(ConvergeTo::Left(out)),
+            }),
+            ConvergeTo::Right(out) => Ok(Step {
+                indices: Indices {
+                    left: middle + 1,
+                    right,
+                },
+                result: Some(ConvergeTo::Right(out)),
+            }),
+        }
+    }
 }
 
 pub enum ConvergeTo<Left, Right> {

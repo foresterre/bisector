@@ -84,30 +84,6 @@ fn bisect_on_view_with_one_element_converge_to_right() {
 // Many elements tests
 // -------------------
 
-// A helper trait, since our ConvergeTo<L, R> struct does not implement debug, as we don't want to
-// force L: Debug and R: Debug on implementers.
-trait UnwrapConvergeTo<L, R> {
-    fn unwrap_converge_left(self) -> L;
-
-    fn unwrap_converge_right(self) -> R;
-}
-
-impl<L, R> UnwrapConvergeTo<L, R> for ConvergeTo<L, R> {
-    fn unwrap_converge_left(self) -> L {
-        match self {
-            Self::Left(l) => l,
-            Self::Right(_) => panic!("Expected left, but got right"),
-        }
-    }
-
-    fn unwrap_converge_right(self) -> R {
-        match self {
-            Self::Left(_) => panic!("Expected right, but got left"),
-            Self::Right(r) => r,
-        }
-    }
-}
-
 #[test]
 fn bisect_on_view_with_many_elements_converge_to_left() {
     let values = input_1_to_10();
