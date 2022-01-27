@@ -8,6 +8,8 @@ description = "Flexible bisect implementatation which allows the use the bisecti
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/foresterre/bisector"
 
+exclude = ["/.github"]
+
 [dependencies]
 
 [dev-dependencies]
