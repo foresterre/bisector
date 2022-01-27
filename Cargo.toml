@@ -10,6 +10,9 @@ repository = "https://github.com/foresterre/bisector"
 
 exclude = ["/.github"]
 
+[package.metadata]
+msrv = "1.37"
+
 [dependencies]
 
 [dev-dependencies]
