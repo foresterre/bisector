@@ -11,4 +11,5 @@ repository = "https://github.com/foresterre/bisector"
 [dependencies]
 
 [dev-dependencies]
+yare = "1.0.1"
 semver = "1"
