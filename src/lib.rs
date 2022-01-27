@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use std::fmt::Debug;
 
 #[derive(Debug)]
@@ -5,22 +8,49 @@ pub struct Bisector<'v, T> {
     values: &'v [T],
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Indices {
     pub left: usize,
     pub right: usize,
 }
 
 impl Indices {
-    pub fn from_bisector<T>(bisector: &Bisector<T>) -> Self {
+    /// Create a new pair of indices.
+    ///
+    /// **When used with Bisector**
+    ///
+    /// The left index must be smaller or equal to the right index `left <= right`,
+    /// for the [`Bisector`] to work properly.
+    /// It's up to the implementor to uphold this requirement.
+    ///
+    /// [`Bisector`]: crate::Bisector
+    pub fn new(left_index: usize, right_index: usize) -> Self {
         Self {
-            left: 0,
-            right: bisector.values().len() - 1,
+            left: left_index,
+            right: right_index,
         }
     }
 
+    /// Re-use the slice of the [`Bisector`] to determine the starting indices.
+    /// The returned indices will be the complete range of the slice, i.e. from index `0` to
+    /// index `|slice| - 1` (length of slice minus 1, i.e. the last index of the slice).
+    ///
+    /// **Panics**
+    ///
+    /// Panics if the slice is empty, i.e. the length of the slice is `0`.
+    ///
+    /// [`Bisector`]: crate::Bisector
+    pub fn from_bisector<T>(bisector: &Bisector<T>) -> Self {
+        Self {
+            left: 0,
+            right: bisector.values.len() - 1,
+        }
+    }
+
+    // Computes the mid-point between the left and right indices.
+    // Uses integer division, so use with care.
     #[inline]
-    pub fn middle(&self) -> usize {
+    pub(crate) fn middle(&self) -> usize {
         (self.left + self.right) / 2
     }
 }
@@ -43,7 +73,7 @@ impl<'v, T> Bisector<'v, T> {
     // function, instead of a customary index to the being searched value. Also, unlike the customary
     // `while indices.left != indices.right` loop, the method takes the current indices (left, right)
     // and returns the resulting indices as part of it's output.
-    pub fn bisect<F, L: Debug, R: Debug>(&self, f: F, indices: Indices) -> Step<L, R>
+    pub fn bisect<F, L, R>(&self, f: F, indices: Indices) -> Step<L, R>
     where
         F: FnOnce(&T) -> ConvergeTo<L, R>,
     {
@@ -80,135 +110,4 @@ impl<'v, T> Bisector<'v, T> {
 pub enum ConvergeTo<Left, Right> {
     Left(Left),
     Right(Right),
-}
-
-// TODO: these need to be fleshed out properly
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn get_new() {
-        let values = [1u32, 2, 3, 4, 6, 7, 8, 9];
-        let bisect = Bisector::new(&values);
-
-        assert_eq!(values.len(), bisect.values().len());
-    }
-
-    #[derive(Debug)]
-    struct FailOutput {
-        message: String,
-        value: u64,
-        exit_code: i32,
-    }
-
-    fn run_external_command(version: &semver::Version) -> ConvergeTo<u64, FailOutput> {
-        // Requires https://github.com/foresterre/exit-with-code to be installed and available on the PATH
-        let command = std::process::Command::new("ewc")
-            .arg(&format!("{}", version.minor))
-            .stderr(std::process::Stdio::piped())
-            .spawn()
-            .unwrap();
-        let status = command.wait_with_output().unwrap();
-
-        if status.status.success() {
-            ConvergeTo::Left(version.minor)
-        } else {
-            ConvergeTo::Right(FailOutput {
-                message: String::from_utf8(status.stderr).unwrap(),
-                value: version.minor,
-                exit_code: status.status.code().unwrap(),
-            })
-        }
-    }
-
-    fn run_minor_greater_than_50(version: &semver::Version) -> ConvergeTo<u64, u64> {
-        if version.minor >= 50 {
-            ConvergeTo::Right(version.minor)
-        } else {
-            ConvergeTo::Left(version.minor)
-        }
-    }
-
-    #[test]
-    fn bisect_with_command() {
-        let versions = [
-            semver::Version::new(2, 100, 0),
-            semver::Version::new(1, 50, 0),
-            semver::Version::new(1, 50, 0),
-            semver::Version::new(1, 10, 0),
-            semver::Version::new(1, 9, 0),
-            semver::Version::new(1, 8, 0),
-            semver::Version::new(0, 0, 0), // will succeed with ewc 0
-        ];
-
-        let bisect = Bisector::new(&versions);
-
-        let mut failures = vec![];
-
-        let mut i = Indices::from_bisector(&bisect);
-        while let Step {
-            indices,
-            result: Some(t),
-        } = bisect.bisect(|v| run_external_command(v), i)
-        {
-            i = indices;
-
-            if let ConvergeTo::Right(f) = t {
-                failures.push(f);
-            }
-        }
-
-        assert_eq!(failures.len(), 2);
-
-        assert_eq!(failures[0].exit_code, 10);
-        assert!(failures[0].message.is_empty());
-        assert_eq!(failures[0].value, 10);
-
-        assert_eq!(failures[1].exit_code, 8);
-        assert!(failures[1].message.is_empty());
-        assert_eq!(failures[1].value, 8);
-    }
-
-    #[test]
-    fn bisect_minor_version_is_at_least_50() {
-        #[derive(Debug, Eq, PartialEq)]
-        pub enum TestableConvergeTo {
-            Left(u64),
-            Right(u64),
-        }
-
-        let versions = [
-            semver::Version::new(1, 100, 0),
-            semver::Version::new(1, 51, 0),
-            semver::Version::new(1, 50, 0),
-            semver::Version::new(1, 10, 0),
-            semver::Version::new(1, 9, 0),
-            semver::Version::new(1, 8, 0),
-            semver::Version::new(0, 0, 0),
-        ];
-
-        let bisect = Bisector::new(&versions);
-        let mut convergence = vec![];
-
-        let mut i = Indices::from_bisector(&bisect);
-        while let Step {
-            indices,
-            result: Some(t),
-        } = bisect.bisect(|v| run_minor_greater_than_50(v), i)
-        {
-            i = indices;
-
-            convergence.push(match t {
-                ConvergeTo::Left(l) => TestableConvergeTo::Left(l),
-                ConvergeTo::Right(r) => TestableConvergeTo::Right(r),
-            });
-        }
-
-        assert_eq!(convergence.len(), 3);
-
-        assert_eq!(convergence[0], TestableConvergeTo::Left(10));
-        assert_eq!(convergence[1], TestableConvergeTo::Right(51));
-        assert_eq!(convergence[2], TestableConvergeTo::Right(50));
-    }
 }
