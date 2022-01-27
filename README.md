@@ -2,11 +2,17 @@
 
 ## Overview
 
-An implementation of the bisection method, aimed to be flexible in its usage. For example, the implementation is not limited
-to numeric types, and does not hold internal state of the current step, allowing for the ability to re-execute a step.
-The lack of internal state also allows the implementation to take a shared reference (`&self`), instead of an exclusive
-reference (`&mut self`), which is convenient, when a process which also takes an exclusive reference must be executed
-as part of the search. Lastly, the output of each step can completely be determined by the user.
+A flexible, stateless implementation of the [bisection method](https://en.wikipedia.org/wiki/Bisection_method). 
+
+Flexibility is achieved by giving the user of this crate control over the input and output types. That is,
+this implementation is not limited to numeric types. In addition, the implementation is stateless. The [Bisector](https://docs.rs/bisector/latest/bisector/struct.Bisector.html#)
+struct on which the [bisect](https://docs.rs/bisector/latest/bisector/struct.Bisector.html#method.bisect) methods are implemented
+does not hold internal mutable state of the last step. This gives the user the option to re-execute a step,
+or really perform any step in the order the user desires (although incremental steps may be most logical still 😅).
+
+The lack of internal mutable state also allows the implementation to take a shared reference (`&self`), instead of an exclusive
+reference (`&mut self`), which is convenient when dealing with ownership in many cases, and was the original reason
+behind this crate.
 
 ## Install
 
@@ -27,6 +33,17 @@ Add the `bisector` crate to list of dependencies in your Cargo manifest (`Cargo.
 [dependencies]
 bisector = { git = "https://github.com/foresterre/bisector.git" }
 ```
+
+## MSRV
+
+The Minimal Supported Rust Version was determined with [cargo-msrv](https://github.com/foresterre/cargo-msrv), and 
+is verified on the during CI runs. The table below lists the MSRV for the current and historical versions of `bisector`. 
+
+| `bisector version` | MSRV |
+|--------------------|------|
+| 0.1.0              | N/A  |
+| 0.2.0              | N/A  |
+| 0.3.0              | 1.37 |
 
 
 ## Examples
