@@ -2,6 +2,8 @@ use crate::ConvergeTo;
 
 mod bisect;
 mod bisect_complex;
+
+#[cfg(feature = "testing_external_program_ewc")]
 mod external_program;
 mod indices;
 mod try_bisect;

@@ -13,3 +13,6 @@ repository = "https://github.com/foresterre/bisector"
 [dev-dependencies]
 yare = "1.0.1"
 semver = "1"
+
+[features]
+testing_external_program_ewc = []
