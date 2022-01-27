@@ -10,7 +10,7 @@ fn new_bisector(input: fn() -> Vec<u32>) {
     let values = input();
     let bisect = Bisector::new(&values);
 
-    assert_eq!(values.len(), bisect.values().len());
+    assert_eq!(values.len(), bisect.view().len());
 }
 
 // Zero elements test

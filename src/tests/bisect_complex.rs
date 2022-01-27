@@ -5,7 +5,7 @@ fn get_new() {
     let values = [1u32, 2, 3, 4, 6, 7, 8, 9];
     let bisect = Bisector::new(&values);
 
-    assert_eq!(values.len(), bisect.values().len());
+    assert_eq!(values.len(), bisect.view().len());
 }
 
 fn run_minor_greater_than_50(version: &semver::Version) -> ConvergeTo<u64, u64> {
