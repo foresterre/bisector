@@ -199,6 +199,8 @@ impl Indices {
     ///
     /// NB: The slice given to [`Bisector`] **must not be empty**.
     ///
+    /// Consider using the fallible function [`Indices::try_from_bisector`] when possible.
+    ///
     /// ### Undefined behaviour
     ///
     /// If the slice given to [`Bisector`] is empty, the resulting behaviour may not be as expected.
@@ -216,6 +218,7 @@ impl Indices {
     /// set to the `right` index will underflow, resulting in undefined behaviour.
     ///
     /// [`Bisector`]: crate::Bisector
+    /// [`Indices::try_from_bisector`]: crate::Indices::try_from_bisector
     pub fn from_bisector<T>(bisector: &Bisector<T>) -> Self {
         Self {
             left: 0,
