@@ -188,9 +188,23 @@ impl Indices {
     /// The returned indices will be the complete range of the slice, i.e. from index `0` to
     /// index `|slice| - 1` (length of slice minus 1, i.e. the last index of the slice).
     ///
-    /// **Panics**
+    /// NB: The slice given to [`Bisector`] **must not be empty**.
     ///
-    /// Panics if the slice is empty, i.e. the length of the slice is `0`.
+    /// ### Undefined behaviour
+    ///
+    /// If the slice given to [`Bisector`] is empty, the resulting behaviour may not be as expected.
+    /// In addition, semantically different behaviour may occur when compiling with `rustc`
+    /// debug or release mode.
+    ///
+    /// **Debug mode**
+    ///
+    /// In rustc debug mode, if the slice is empty, i.e. the length of the slice is `0`, this function
+    /// will panic, by virtue of debug mode out of bounds checking.
+    ///
+    /// **Release mode**
+    ///
+    /// In rustc release mode, if the slice is empty, i.e. the length of the slice is `0`, the value
+    /// set to the `right` index will underflow, resulting in undefined behaviour.
     ///
     /// [`Bisector`]: crate::Bisector
     pub fn from_bisector<T>(bisector: &Bisector<T>) -> Self {
