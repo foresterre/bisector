@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/foresterre/bisector/compare/v0.4.0...HEAD
+
+## [0.4.0] - 2022-05-25
+
 ### Added
 
 * Add fallible function `Indices::try_from_bisector` to create a valid `Indices` instance
@@ -12,5 +16,5 @@
   or `try_bisect`.
 * Suggest usage of  `Indices::try_from_bisector` over `Indices::from_bisector`
 
-[Unreleased]: https://github.com/foresterre/bisector/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/foresterre/bisector/compare/v0.3.0...v0.4.0
 
