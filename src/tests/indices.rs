@@ -37,6 +37,35 @@ fn create_indices_with_new() {
 }
 
 #[yare::parameterized(
+    one_to_ten = { input_1_to_10, (0, 9) },
+    one = { input_1, (0, 0) },
+)]
+fn create_starting_indices_try_from_bisector(
+    input: fn() -> Vec<u32>,
+    indices_expected: (usize, usize),
+) {
+    let values = input();
+    let bisector = Bisector::new(&values);
+
+    let indices = Indices::try_from_bisector(&bisector).unwrap();
+
+    let (left_expected, right_expected) = indices_expected;
+
+    assert_eq!(indices.left, left_expected);
+    assert_eq!(indices.right, right_expected);
+}
+
+#[test]
+fn creating_starting_indices_try_from_bisector_with_empty_slice_should_error() {
+    let values = input_empty();
+    let bisector = Bisector::new(&values);
+
+    let result = Indices::try_from_bisector(&bisector);
+
+    assert_eq!(result.unwrap_err(), EmptySliceError);
+}
+
+#[yare::parameterized(
     zeros = { 0, 0, 0 },
     zero_one = { 0, 1, 0 },
     zero_two = { 0, 2, 1 },
