@@ -44,6 +44,7 @@ is verified on the during CI runs. The table below lists the MSRV for the curren
 | 0.1.0              | N/A  |
 | 0.2.0              | N/A  |
 | 0.3.0              | 1.37 |
+| 0.4.0              | 1.37 |
 
 
 ## Examples
