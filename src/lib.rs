@@ -26,7 +26,16 @@
 #[cfg(test)]
 mod tests;
 
+pub(crate) mod error;
+
 use std::fmt::Debug;
+
+/// Error returned by [`Indices::try_from_bisector`], when the slice given to [`Bisector::new`]
+/// is empty.
+///
+/// [`Indices::try_from_bisector`]: crate::Indices::try_from_bisector
+/// [`Bisector::new`]: crate::Bisector::new
+pub use error::EmptySliceError;
 
 /// Stateless implementation of the bisection method.
 #[derive(Debug)]
@@ -211,6 +220,27 @@ impl Indices {
         Self {
             left: 0,
             right: bisector.view.len() - 1,
+        }
+    }
+
+    /// Re-use the slice of the [`Bisector`] to determine the starting indices.
+    ///
+    /// The returned indices will be the complete range of the slice, i.e. from index `0` to
+    /// index `|slice| - 1` (length of slice minus 1, i.e. the last index of the slice).
+    ///
+    /// The slice given to [`Bisector`] must not be empty. If it is, an [`EmptySliceError`]
+    /// `Err` result will be returned..
+    ///
+    /// [`Bisector`]: crate::Bisector
+    /// [`EmptySliceError`]: crate::EmptySliceError
+    pub fn try_from_bisector<T>(bisector: &Bisector<T>) -> Result<Self, EmptySliceError> {
+        if !bisector.view.is_empty() {
+            Ok(Self {
+                left: 0,
+                right: bisector.view.len() - 1,
+            })
+        } else {
+            Err(EmptySliceError)
         }
     }
 
