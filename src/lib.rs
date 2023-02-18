@@ -251,7 +251,7 @@ impl Indices {
     /// Uses integer division, so use with care.
     #[inline]
     pub fn middle(&self) -> usize {
-        (self.left + self.right) / 2
+        self.left + (self.right - self.left) / 2
     }
 }
 
