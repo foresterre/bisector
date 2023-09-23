@@ -251,7 +251,14 @@ impl Indices {
     /// Uses integer division, so use with care.
     #[inline]
     pub fn middle(&self) -> usize {
-        (self.left + self.right) / 2
+        debug_assert!(
+            self.right >= self.left,
+            "right index ({}) < left index ({}), but expected right index >= left index",
+            self.right,
+            self.left,
+        );
+
+        self.left + ((self.right - self.left) / 2)
     }
 }
 
