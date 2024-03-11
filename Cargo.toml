@@ -16,7 +16,7 @@ msrv = "1.37"
 [dependencies]
 
 [dev-dependencies]
-yare = "2.0.0"
+yare = "3.0.0"
 semver = "1"
 
 [features]
