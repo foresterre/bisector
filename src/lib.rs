@@ -73,7 +73,8 @@ impl<'v, T> Bisector<'v, T> {
     ///
     /// As also described above, the `indices` argument must be the left and right index which point
     /// to the view used by the current step of the bisection. The left and right index must be valid
-    /// indices for the slice held by the [`Bisector`] (also called the `view`).
+    /// indices for the slice held by the [`Bisector`] (also called the `view`), where the right index
+    /// may also be one past the last index of the slice.
     ///
     /// See also:
     /// * [`Bisector::try_bisect`]: A variant of [`bisect`] which can be used when the convergence function
@@ -162,7 +163,8 @@ impl<'v, T> Bisector<'v, T> {
 }
 
 /// The left and right indices, which in combination with the slice held by the [`Bisector`], provide
-/// the view on which a bisection step can be applied.
+/// the view on which a bisection step can be applied. The right index is the exclusive upper bound of
+/// this view, i.e. the element it points to is not part of the view.
 ///
 /// The [`Bisector::bisect`] and [`Bisector::try_bisect`] methods take these `Indices` as input, and
 /// produce a new `Indices` copy as output (the indices of the one step further converged area are
@@ -195,41 +197,25 @@ impl Indices {
 
     /// Re-use the slice of the [`Bisector`] to determine the starting indices.
     /// The returned indices will be the complete range of the slice, i.e. from index `0` to
-    /// index `|slice| - 1` (length of slice minus 1, i.e. the last index of the slice).
+    /// index `|slice|` (length of slice, i.e. one past the last index of the slice).
     ///
-    /// NB: The slice given to [`Bisector`] **must not be empty**.
+    /// NB: If the slice given to [`Bisector`] is empty, the returned indices are already converged.
     ///
     /// Consider using the fallible function [`Indices::try_from_bisector`] when possible.
-    ///
-    /// ### Undefined behaviour
-    ///
-    /// If the slice given to [`Bisector`] is empty, the resulting behaviour may not be as expected.
-    /// In addition, semantically different behaviour may occur when compiling with `rustc`
-    /// debug or release mode.
-    ///
-    /// **Debug mode**
-    ///
-    /// In rustc debug mode, if the slice is empty, i.e. the length of the slice is `0`, this function
-    /// will panic, by virtue of debug mode out of bounds checking.
-    ///
-    /// **Release mode**
-    ///
-    /// In rustc release mode, if the slice is empty, i.e. the length of the slice is `0`, the value
-    /// set to the `right` index will underflow, resulting in undefined behaviour.
     ///
     /// [`Bisector`]: crate::Bisector
     /// [`Indices::try_from_bisector`]: crate::Indices::try_from_bisector
     pub fn from_bisector<T>(bisector: &Bisector<T>) -> Self {
         Self {
             left: 0,
-            right: bisector.view.len() - 1,
+            right: bisector.view.len(),
         }
     }
 
     /// Re-use the slice of the [`Bisector`] to determine the starting indices.
     ///
     /// The returned indices will be the complete range of the slice, i.e. from index `0` to
-    /// index `|slice| - 1` (length of slice minus 1, i.e. the last index of the slice).
+    /// index `|slice|` (length of slice, i.e. one past the last index of the slice).
     ///
     /// The slice given to [`Bisector`] must not be empty. If it is, an [`EmptySliceError`]
     /// `Err` result will be returned..
@@ -240,7 +226,7 @@ impl Indices {
         if !bisector.view.is_empty() {
             Ok(Self {
                 left: 0,
-                right: bisector.view.len() - 1,
+                right: bisector.view.len(),
             })
         } else {
             Err(EmptySliceError)

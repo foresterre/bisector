@@ -58,11 +58,16 @@ fn bisect_on_view_with_one_element_converge_to_left() {
 
     let start_from = Indices::from_bisector(&bisector);
 
-    // Because we have 1 element, our left and right indices will be the same, so we immediately return;
-    // There is no need to converge
+    // Our only element is still part of the view (left = 0, right = |values| = 1), so it is evaluated
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), start_from);
 
-    assert_eq!(step.indices, start_from);
+    assert_eq!(step.indices, Indices::new(0, 0));
+    assert_eq!(step.result.unwrap().unwrap_converge_left(), 1);
+
+    // Now the view is empty, so we're converged
+    let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), step.indices);
+
+    assert_eq!(step.indices, Indices::new(0, 0));
     assert!(step.result.is_none());
 }
 
@@ -73,11 +78,16 @@ fn bisect_on_view_with_one_element_converge_to_right() {
 
     let start_from = Indices::from_bisector(&bisector);
 
-    // Because we have 1 element, our left and right indices will be the same, so we immediately return;
-    // There is no need to converge
+    // Our only element is still part of the view (left = 0, right = |values| = 1), so it is evaluated
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Right(value), start_from);
 
-    assert_eq!(step.indices, start_from);
+    assert_eq!(step.indices, Indices::new(1, 1));
+    assert_eq!(step.result.unwrap().unwrap_converge_right(), 1);
+
+    // Now the view is empty, so we're converged
+    let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Right(value), step.indices);
+
+    assert_eq!(step.indices, Indices::new(1, 1));
     assert!(step.result.is_none());
 }
 
@@ -93,12 +103,12 @@ fn bisect_on_view_with_many_elements_converge_to_left() {
 
     // In this test case, we'll manually step through the bisection (i.e. without a loop)
 
-    // (1) We use the default starting indices (i.e. left = 0, right = |values| - 1 = 9;
+    // (1) We use the default starting indices (i.e. left = 0, right = |values| = 10;
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), start_from);
 
     // We converge to the left, so our view of values will be halved to the left half.
-    assert_eq!(step.indices, Indices::new(0, 4));
-    assert_eq!(step.result.unwrap().unwrap_converge_left(), 5);
+    assert_eq!(step.indices, Indices::new(0, 5));
+    assert_eq!(step.result.unwrap().unwrap_converge_left(), 6);
 
     // (2) Now we use the next indices produced by step, to progress our bisection: step.indices
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), step.indices);
@@ -135,30 +145,30 @@ fn bisect_on_view_with_many_elements_converge_to_right() {
 
     // In this test case, we'll manually step through the bisection (i.e. without a loop)
 
-    // (1) We use the default starting indices (i.e. left = 0, right = |values| - 1 = 9;
+    // (1) We use the default starting indices (i.e. left = 0, right = |values| = 10;
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Right(value), start_from);
 
     // We converge to the right, so our view of values will be halved to the right half.
-    assert_eq!(step.indices, Indices::new(5, 9));
-    assert_eq!(step.result.unwrap().unwrap_converge_right(), 5);
+    assert_eq!(step.indices, Indices::new(6, 10));
+    assert_eq!(step.result.unwrap().unwrap_converge_right(), 6);
 
     // (2) Now we use the next indices produced by step, to progress our bisection: step.indices
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Right(value), step.indices);
 
     // We converge to the right, so our view of values will be halved further to the right half.
-    assert_eq!(step.indices, Indices::new(8, 9));
-    assert_eq!(step.result.unwrap().unwrap_converge_right(), 8);
+    assert_eq!(step.indices, Indices::new(9, 10));
+    assert_eq!(step.result.unwrap().unwrap_converge_right(), 9);
 
-    // (3) Step further
+    // (3) Step further: the last element is part of the view as well, so it is evaluated too
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Right(value), step.indices);
 
-    assert_eq!(step.indices, Indices::new(9, 9));
-    assert_eq!(step.result.unwrap().unwrap_converge_right(), 9);
+    assert_eq!(step.indices, Indices::new(10, 10));
+    assert_eq!(step.result.unwrap().unwrap_converge_right(), 10);
 
     // (4) Step a one more time to check we are at the end
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Right(value), step.indices);
 
-    assert_eq!(step.indices, Indices::new(9, 9));
+    assert_eq!(step.indices, Indices::new(10, 10));
     assert!(step.result.is_none());
 }
 
@@ -171,12 +181,12 @@ fn bisect_on_view_with_many_elements_converge_zig_zag() {
 
     // In this test case, we'll manually step through the bisection (i.e. without a loop)
 
-    // (1) We use the default starting indices (i.e. left = 0, right = |values| - 1 = 9;
+    // (1) We use the default starting indices (i.e. left = 0, right = |values| = 10;
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), start_from);
 
     // We converge to the left, so our view of values will be halved to the left half.
-    assert_eq!(step.indices, Indices::new(0, 4));
-    assert_eq!(step.result.unwrap().unwrap_converge_left(), 5);
+    assert_eq!(step.indices, Indices::new(0, 5));
+    assert_eq!(step.result.unwrap().unwrap_converge_left(), 6);
 
     // (2) Now we use the next indices produced by step, to progress our bisection: step.indices
     //      Because we zig-zag, we'll now converge to the right
@@ -184,24 +194,30 @@ fn bisect_on_view_with_many_elements_converge_zig_zag() {
 
     // We converge to the right, so our view of values will be halved to the right half of our previous
     // view.
-    assert_eq!(step.indices, Indices::new(3, 4));
+    assert_eq!(step.indices, Indices::new(3, 5));
     assert_eq!(step.result.unwrap().unwrap_converge_right(), 3);
 
     // (3) Step further: zig-zag left
+    let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), step.indices);
+
+    assert_eq!(step.indices, Indices::new(3, 4));
+    assert_eq!(step.result.unwrap().unwrap_converge_left(), 5);
+
+    // (4) Step further: left again, now only one element is left in the view
     let final_step: Step<u32, u32> =
         bisector.bisect(|&value| ConvergeTo::Left(value), step.indices);
 
     assert_eq!(final_step.indices, Indices::new(3, 3));
     assert_eq!(final_step.result.unwrap().unwrap_converge_left(), 4);
 
-    // (4a) Step a one more time to check we are at the end: left
+    // (5a) Step a one more time to check we are at the end: left
     let step: Step<u32, u32> =
         bisector.bisect(|&value| ConvergeTo::Left(value), final_step.indices);
 
     assert_eq!(step.indices, Indices::new(3, 3));
     assert!(step.result.is_none());
 
-    // (4b) Step a one more time to check we are at the end: right
+    // (5b) Step a one more time to check we are at the end: right
     let step: Step<u32, u32> =
         bisector.bisect(|&value| ConvergeTo::Right(value), final_step.indices);
 
@@ -216,14 +232,14 @@ fn bisect_on_view_with_many_elements_re_use_same_indices_means_no_progress() {
 
     let start_from = Indices::from_bisector(&bisector);
 
-    let expected_next_indices = Indices::new(0, 4);
-    let expected_output_value = 5;
+    let expected_next_indices = Indices::new(0, 5);
+    let expected_output_value = 6;
 
     // In this test case, we'll manually step through the bisection (i.e. without a loop)
     // We'll show no progress is made when the same input indices are used (i.e. the bisector
     //  does not store the progress as internal state).
 
-    // (1) We use the default starting indices (i.e. left = 0, right = |values| - 1 = 9;
+    // (1) We use the default starting indices (i.e. left = 0, right = |values| = 10;
     let step: Step<u32, u32> = bisector.bisect(|&value| ConvergeTo::Left(value), start_from);
 
     // We converge to the left, so our view of values will be halved to the left half.
