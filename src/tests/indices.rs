@@ -1,8 +1,9 @@
 use super::{super::*, *};
 
 #[yare::parameterized(
-    one_to_ten = { input_1_to_10, (0, 9) },
-    one = { input_1, (0, 0) },
+    one_to_ten = { input_1_to_10, (0, 10) },
+    one = { input_1, (0, 1) },
+    empty = { input_empty, (0, 0) },
 )]
 fn create_starting_indices_from_bisector(
     input: fn() -> Vec<u32>,
@@ -20,12 +21,13 @@ fn create_starting_indices_from_bisector(
 }
 
 #[test]
-#[should_panic]
-fn creating_starting_indices_from_bisector_with_empty_slice_panics() {
+fn creating_starting_indices_from_bisector_with_empty_slice_is_converged() {
     let values = input_empty();
     let bisector = Bisector::new(&values);
 
-    let _ = Indices::from_bisector(&bisector);
+    let indices = Indices::from_bisector(&bisector);
+
+    assert_eq!(indices, Indices::new(0, 0));
 }
 
 #[test]
@@ -37,8 +39,8 @@ fn create_indices_with_new() {
 }
 
 #[yare::parameterized(
-    one_to_ten = { input_1_to_10, (0, 9) },
-    one = { input_1, (0, 0) },
+    one_to_ten = { input_1_to_10, (0, 10) },
+    one = { input_1, (0, 1) },
 )]
 fn create_starting_indices_try_from_bisector(
     input: fn() -> Vec<u32>,

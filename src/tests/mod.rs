@@ -2,6 +2,7 @@ use crate::ConvergeTo;
 
 mod bisect;
 mod bisect_complex;
+mod converge_to_last;
 
 #[cfg(feature = "testing_external_program_ewc")]
 mod external_program;
